@@ -4,13 +4,11 @@
 
 The Northern Light and Stars Chasing Guidance Shiny App is a web-based application that helps users plan their trip to Cook County, Minnesota, to see the Northern Lights and other celestial events. The app provides users with two interactive maps: a map that shows the best spots to view the Northern Lights and a map that shows the location of numerous celestial objects like stars, constellations, and the Milky Way. In addition, the app includes nearby hotels with operating hours and contact information, and restaurants where they can enjoy a meal. It also displays the 27-day, 3-day, and 30-minute aurora forecast captured from the NOAA website and an up to date forecast of planet visibility based on time of day. 
 
-## **Team Members:**
-
-Our team consists of two members: Yansong Wen and Ashley Farnum
+## **Team Members:** Yansong Wen, Ashley Farnum
 
 ## **Product Title:** Northern Light and Star Chasing Guidance
 
-## **Product Type:** Shiny app 
+## **Product Type:** Shiny app
 
 ## **Product Purpose:**
 
