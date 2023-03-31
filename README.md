@@ -47,4 +47,5 @@ In conclusion, the Northern Light and Stars Chasing Guidance Shiny App is a user
 1.  The stellarium web page: <https://stellarium-web.org/p/observations>
 2.  The stellarium project: <https://github.com/Stellarium/stellarium-web-engine>
 3.  NOAA website: <https://www.noaa.gov/>
-4.  Weather data (api) : <https://www.visualcrossing.com/weather-api?ga_api10=&gclid=CjwKCAjw5pShBhB_EiwAvmnNV8djkVg-Bik7ToFYP-aolivnTTMLBJRIV47OoiWW8Ris0yBlKG8eHRoCIB0QAvD_BwE>
+4.  Aurora forecast extract sample: <https://github.com/calabresemic/aurora-api/blob/main/auroranoaa/__init__.py>
+5.  Weather data (api) : <https://www.visualcrossing.com/weather-api?ga_api10=&gclid=CjwKCAjw5pShBhB_EiwAvmnNV8djkVg-Bik7ToFYP-aolivnTTMLBJRIV47OoiWW8Ris0yBlKG8eHRoCIB0QAvD_BwE>
