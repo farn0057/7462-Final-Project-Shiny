@@ -1,0 +1,11 @@
+#  Northern Light and Stars Chasing Guidance Shiny App Working Draft
+
+##Update: 
+An interactive leaflet map of Cook County, MN was created and added to the Shiny app, so users can not only use the map as a frame of reference for the County, but will also be able to use the map to find lookout viewpoints that will be helpful for star chasing, but also campsites and hotels where they can stay, as well. Observatories still need to be added, but we were having difficulty adding a second feature to the leaflet code that worked successfully. Our plan is to add observatories and to improve the information that the user gets back when they hover over a map marker. Right now, only the name is displayed. Our goal is to have the name and other basic information for the user to utilize. 
+
+We were able to use an R iframe code to input the stellarium open source planetarium website directly into our shiny app. This allows us to be able to utilize the planet visibility functions and night sky map functions from the stellarium website directly on our shiny app. The user can register directly from our shiny app or will be able to utilize the functions without registering. Additionally, they will be able to view the night sky as they should be able to see it by inputting their location into that section of the shiny app and the corresponding stars and constellations will populate. The only concern right now regarding this is making sure it is not taking up too much space on our app, but yet is large enough to remain functional to the user. There is no specific dataset for the stellarium page, but below is the website and the related github page: 
+
+https://stellarium-web.org/p/observations
+
+https://github.com/Stellarium/stellarium-web-engine.git
+
