@@ -28,7 +28,7 @@ To sum up, creating the app presented several challenges that required creative 
 
 ![](Screen%20Shot%202023-04-16%20at%2011.31.33%20PM.png)
 
-Figure5. Picture showing the error occurs when combined
+**Figure5. Picture showing the error occurs when combined**
 
 ![](Screen%20Shot%202023-04-16%20at%2011.26.45%20PM.png)
 
