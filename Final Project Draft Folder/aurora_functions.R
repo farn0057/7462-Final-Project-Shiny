@@ -66,12 +66,13 @@ kp_data_long <- reshape2::melt(df_kp1, id.vars = "time", variable.name = "Date",
 
 plot_kp <- 
   # Create a bar plot for each day using facet_wrap
-  ggplot(kp_data_long, aes(y = time, x = kp, fill = Date)) +
-    geom_bar(stat = "identity") +
+  ggplot(kp_data_long, aes(x = time, y = kp, fill = Date)) +
+    geom_col() +
     facet_wrap(~ Date, ncol = 3) +
     scale_fill_manual(values = c("#FF6666", "#66CCFF", "#99CC33")) + # Set custom fill colors
     ylab("") +
     xlab("kp Value") +
+    coord_flip()+
     ggtitle("kp Value for Different Time (CST) in the latest three Days")
 
 #Radio Blackout Forecast for the latest three days
