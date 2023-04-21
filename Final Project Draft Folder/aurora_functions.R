@@ -5,12 +5,11 @@ library(tidyr)
 library(ggplot2)
 library(reshape2)
 
-
 #3 day forecast
 forecast_url <- "https://services.swpc.noaa.gov/text/3-day-forecast.txt"
 forecast_text <- readLines(forecast_url)
-df_kp1 <- read.table(text =forecast_text[15:22], header = FALSE, stringsAsFactors = FALSE)
 k<-forecast_text[14]
+df_kp0 <-forecast_text[15:22]
 # split the string by whitespace characters
 k_split <- unlist(strsplit(k, "\\s+"))
 k_combined <- paste(k_split, collapse = " ")
@@ -19,8 +18,26 @@ k_combined <- paste(k_split, collapse = " ")
 k_dates <- substr(k_combined, start = 1, stop = nchar(k_combined))
 k_dates <- gsub(" ", "", k_dates)
 k_split <- strsplit(k_dates, "(?<=.{5})", perl = TRUE)[[1]]
-colnames(df_kp1) <- c("time", k_split)
 
+
+#clean the data
+df_kp1 <- matrix(nrow=8, ncol=7)
+for (i in 1:8){
+  row_vals <- unlist(strsplit(df_kp0[i], "\\s+"))
+  df_kp1[i,1] <- row_vals[1]
+  df_kp1[i,2] <- as.numeric(row_vals[2])
+  df_kp1[i,3] <- ifelse(grepl("G", row_vals[3]), row_vals[3], NA)
+  df_kp1[i,4] <- ifelse(grepl("G", row_vals[3]),as.numeric(row_vals[4]),as.numeric(row_vals[3]))
+  df_kp1[i,5] <- ifelse(grepl("G", row_vals[5]), row_vals[5], NA)
+  df_kp1[i,6] <- ifelse(grepl("G", row_vals[3]),ifelse(grepl("G", row_vals[5]),as.numeric(row_vals[6]),
+                                                   as.numeric(row_vals[5])),as.numeric(row_vals[4]))
+  df_kp1[i,7] <- ifelse(grepl("G", row_vals[7]), row_vals[7], NA)
+}
+
+colnames(df_kp1) <- c("time", k_split[1],'tag',k_split[2],'tag',k_split[3],'tag')
+keep_cols <- which(!grepl("tag", colnames(df_kp1)))
+df_kp1<-df_kp1[,keep_cols]
+df_kp1<-as.data.frame(df_kp1)
 
 # convert the times to CST timezone
 utc_to_cst <- function(hour_range) {
