@@ -18,7 +18,8 @@ library(tigris)
 library(viridis, quietly = TRUE)
 library(leaflet.minicharts)
 library(htmltools)
-
+library(geosphere)
+#library(mapview)
 source("aurora_functions.R")
 
 
@@ -28,35 +29,56 @@ timestamp_utc <-c(json_data$`Observation Time`,json_data$`Forecast Time`)
 timestamp_cst <- with_tz(ymd_hms(timestamp_utc, tz = "UTC"), "America/Chicago")
 timestamp_str <- substr(as.character(timestamp_cst),1,38)
 
+
+
+
+
 ui <- fluidPage(
-  tags$style(type="text/css", "body {background-color:  #000000}"),
+  tags$style(type="text/css", "body {background-color:  #000033}"),
+  tags$style(".big-button { font-size: 24px; padding: 7px 14px; }"),
   tags$a(href = "https://www.swpc.noaa.gov/products/27-day-outlook-107-cm-radio-flux-and-geomagnetic-indices", target = "_blank",
-         tags$button("27 day Aurora forecast")),
+         tags$button(class = "big-button","27 day Aurora forecast")),
   tags$a(href = "https://www.windy.com/-Clouds-clouds?clouds,44.996,-97.097,5,m:eYvadFK", target = "_blank",
-         tags$button("Clouds map")),
+         tags$button(class = "big-button","Clouds map")),
+  
+  tags$head(tags$style(
+    HTML(
+      "body {
+        background-image: url('https://apod.nasa.gov/apod/image/2304/AlphaCamelopardis_s3100.png');
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-attachment: fixed;
+        background-size: cover;
+      }"
+    )
+  )),
   titlePanel(tags$h1("Northern Lights and Star Chasing Guidance", style = "color: white")),
   
-  leafletOutput("map", height = "500px", width = "500px"),
-  tags$iframe(src="https://stellarium-web.org/p/observations", width="100%", height="400"),
-  tags$iframe(src="https://apod.nasa.gov/apod/astropix.html", width="50%", height="200"),
+  leafletOutput("map", height = "500px", width = "100%"),
+  div(id = "my-iframe", style = "height: 70px;"),
   sidebarLayout(
     sidebarPanel(
-      conditionalPanel(condition = "input.forecast_type == '30_minutes'",
-                       selectInput("longitude", "Longitude:", choices = unique(forecast_df$longitude)),
-                       selectInput("latitude", "Latitude:", choices = unique(forecast_df$latitude))),
-      radioButtons("forecast_type", "Choose forecast type:", choices = c("30_minutes", "3_days"), selected = "30_minutes")
-    )
-    
-    ,
+      selectInput("longitude", "Longitude:", choices = unique(forecast_df$longitude)),
+      selectInput("latitude", "Latitude:", choices = unique(forecast_df$latitude))
+    ),
     mainPanel(
-      h4("Approximate Energy Deposition(ergs/cm2): ", style = "color: white;"),
-      verbatimTextOutput("forecast_output"),
-      h4("Forecast Time ",style = "color: white;"),
-      verbatimTextOutput("timestamp_text"),
-      plotOutput("forecast_plot"),
-      tableOutput("table1"),
-      tableOutput("table2")
-    ))
+      tabsetPanel(
+        tabPanel("Energy Deposition",
+                 h4("Approximate Energy Deposition(ergs/cm2): ", style = "color: white;"),
+                 verbatimTextOutput("forecast_output"),
+                 h4("Forecast Time ",style = "color: white;"),
+                 verbatimTextOutput("timestamp_text")),
+        tabPanel("Plot", plotOutput("forecast_plot")),
+        tabPanel("Radio Blackout Forecast",
+                 tableOutput("table1"), style = "color: white;"),
+        tabPanel("Solar Radiation Storm Forecast",
+                 tableOutput("table2"), style = "color: white;")
+      )
+    )
+  ),
+  div(id = "my-iframe", style = "height: 70px;"),
+  tags$iframe(src="https://stellarium-web.org/p/observations", width="100%", height="500")
+  
   )
 
 server <- function(input, output) {
@@ -72,7 +94,54 @@ server <- function(input, output) {
     
     col_pal <- leaflet::colorFactor(palette = "viridis", 
                                     domain = c("camp_site", "viewpoint"))  
+   
+     #Create a reactive variable to store the selected points:
+    selected_points <- reactiveValues()
+    #create lng and lat data
+    # Convert osm_points to an sf object
+    osm_points_sf <- st_as_sf(osmdata$osm_points)
     
+    # Convert the geometry column to a data.frame
+    osm_points_df <- st_coordinates(osm_points_sf)
+    
+    # Set column names
+    colnames(osm_points_df) <- c("Longitude", "Latitude")
+    
+    # Clean the coordinator
+    osm_points_sf$geometry <- gsub("POINT \\((.*)\\)", "\\1", osm_points_sf$geometry)
+    
+    #split out the longtitude and the latitude
+    my_var_split <- matrix(nrow=length(osm_points_sf$geometry), ncol=2)
+    
+    for (i in 1:length(osm_points_sf$geometry)) {
+      my_var_split[i,] <- as.numeric(unlist(strsplit(gsub("[c()]", "", osm_points_sf$geometry[i]), ",")))
+    }
+    
+    observeEvent(input$map_click, {
+      click <- input$map_click
+      lat <- click$lat
+      lng <- click$lng
+      
+      closest_point <- NULL
+      
+      if (!is.na(lat) && !is.na(lng)) {
+        my_var_split <- as.data.frame(matrix(as.numeric(strsplit(gsub("[c()]", "", osm_points_sf$geometry), ",")[[1]]), ncol=2, byrow=T))
+        closest_point <- my_var_split[which.min(geosphere::distm(
+          c(lng, lat), 
+          c(my_var_split[,1],my_var_split[,2]),
+          fun = distVincentyEllipsoid
+        )), ]
+      }
+      
+      if (!is.null(closest_point)) {
+        # Add the point to the selected points list
+        selected_points$points <- rbind(selected_points$points, closest_point)
+      }
+    })
+    
+    
+    osmdata$osm_points$lng<-my_var_split[,1]
+    osmdata$osm_points$lat<-my_var_split[,2]
     leaflet(data = filter(osmdata$osm_points, tourism %in% c("camp_site", "viewpoint"))) %>%
       addTiles() %>%
       addCircleMarkers(
@@ -88,48 +157,54 @@ server <- function(input, output) {
           fontColor = "black", 
           boxshadow = "3px 3px rgba(0,0,0,0.25)",
           textShadow = "3px 3px white"
-        ) ) %>%
+        ),
+        popup = paste0("Latitude: ", round(osmdata$osm_points$lat, 6), "<br>",
+                       "Longitude: ", round(osmdata$osm_points$lng, 6), "<br>",
+                       "Camp Size: ", osmdata$osm_points$camp_site)
+        ) %>%
       addLegend(      
         position = "bottomright",
         title = "Viewpoints and Camp Sites for Night Sky Gazing",
         colors = col_pal(c("camp_site", "viewpoint")),
-        labels = c("Camp Sites", "Lookout Viewpoints")
+        labels = c("Camp Sites", "Lookout Viewpoints"),
+        opacity = 1,
+        labFormat = labelFormat(
+          label = function(label, type) {
+            if (type == "color") {
+              return(NULL)
+            } else {
+              return("Click a point to see details")
+            }
+          }
+        )
       )
   })
   
   output$timestamp_text<-renderText(timestamp_str)
   output$forecast_output <- renderText({
-    if(input$forecast_type == "30_minutes") {
+    
       forecast <- get_forecast(input$longitude, input$latitude, forecast_df)
-      return(forecast)}else {
-        NA
-      }
+      
   })
   
   # Output the forecast plot
   output$forecast_plot <- renderPlot({
-    if(input$forecast_type == "30_minutes") {
-      "N/A"
-    } else {
+    
       plot_kp
-    }
+   
   })
   
   # Output table 1
   output$table1 <- renderTable({
-    if(input$forecast_type == "30_minutes") {
-      "N/A" } else {
         rb
-      }
+      
   })
   
   # Output table 2
-  output$table2 <- renderTable(
-    {
-      if(input$forecast_type == "30_minutes") {
-        "N/A"} else {
+  output$table2 <- renderTable({
+      
           srs
-        }
+       
     })
   
 }
