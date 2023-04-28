@@ -17,6 +17,7 @@ library(ggmap)
 library(tigris)
 library(viridis, quietly = TRUE)
 library(leaflet.minicharts)
+library(htmltools)
 
 source("aurora_functions.R")
 
@@ -28,13 +29,16 @@ timestamp_cst <- with_tz(ymd_hms(timestamp_utc, tz = "UTC"), "America/Chicago")
 timestamp_str <- substr(as.character(timestamp_cst),1,38)
 
 ui <- fluidPage(
+  tags$style(type="text/css", "body {background-color:  #000000}"),
   tags$a(href = "https://www.swpc.noaa.gov/products/27-day-outlook-107-cm-radio-flux-and-geomagnetic-indices", target = "_blank",
          tags$button("27 day Aurora forecast")),
   tags$a(href = "https://www.windy.com/-Clouds-clouds?clouds,44.996,-97.097,5,m:eYvadFK", target = "_blank",
          tags$button("Clouds map")),
-  titlePanel("Northern Lights and Star Chasing Guidance"),
+  titlePanel(tags$h1("Northern Lights and Star Chasing Guidance", style = "color: white")),
+  
   leafletOutput("map", height = "500px", width = "500px"),
-  tags$iframe(src="https://stellarium-web.org/p/observations", width="75%", height="300"),
+  tags$iframe(src="https://stellarium-web.org/p/observations", width="100%", height="400"),
+  tags$iframe(src="https://apod.nasa.gov/apod/astropix.html", width="50%", height="200"),
   sidebarLayout(
     sidebarPanel(
       conditionalPanel(condition = "input.forecast_type == '30_minutes'",
@@ -45,9 +49,9 @@ ui <- fluidPage(
     
     ,
     mainPanel(
-      h4("Approximate Energy Deposition(ergs/cm2): "),
+      h4("Approximate Energy Deposition(ergs/cm2): ", style = "color: white;"),
       verbatimTextOutput("forecast_output"),
-      h4("Forecast Time "),
+      h4("Forecast Time ",style = "color: white;"),
       verbatimTextOutput("timestamp_text"),
       plotOutput("forecast_plot"),
       tableOutput("table1"),
@@ -62,36 +66,35 @@ server <- function(input, output) {
   
   
   output$map <- renderLeaflet({
-    
     osmdata <- opq(bbox = "Cook County, MN") %>% 
-      add_osm_feature(key = "tourism", value = c("camp_site", "viewpoint", "hotel")) %>% 
-      osmdata_sf()           
+      add_osm_feature(key = "tourism", value = c("camp_site", "viewpoint"))%>%
+      osmdata_sf()      
     
     col_pal <- leaflet::colorFactor(palette = "viridis", 
-                                    domain = c("camp_site", "viewpoint", "hotel"))  
+                                    domain = c("camp_site", "viewpoint"))  
     
-    leaflet(data = filter(osmdata$osm_points, tourism %in% c("camp_site", "viewpoint", "hotel"))) %>%
+    leaflet(data = filter(osmdata$osm_points, tourism %in% c("camp_site", "viewpoint"))) %>%
       addTiles() %>%
       addCircleMarkers(
         color = ~col_pal(tourism), 
         opacity="0.8",
         weight="2",
         radius="2",
-        label = ~name,
+        label = ~name, 
         labelOptions = labelOptions(
           textOnly = TRUE, 
           direction = "auto",
-          fontSize = "26px", 
+          fontSize = "30px", 
           fontColor = "black", 
+          boxshadow = "3px 3px rgba(0,0,0,0.25)",
           textShadow = "3px 3px white"
-        )) %>%
+        ) ) %>%
       addLegend(      
         position = "bottomright",
-        title = "Viewpoints, Camp Sites, and Hotels",
-        colors = col_pal(c("camp_site", "viewpoint", "hotel")),
-        labels = c("Camp Sites", "Lookout Viewpoints", "Hotels")
+        title = "Viewpoints and Camp Sites for Night Sky Gazing",
+        colors = col_pal(c("camp_site", "viewpoint")),
+        labels = c("Camp Sites", "Lookout Viewpoints")
       )
-    
   })
   
   output$timestamp_text<-renderText(timestamp_str)
