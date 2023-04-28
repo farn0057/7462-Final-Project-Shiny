@@ -35,7 +35,7 @@ timestamp_str <- substr(as.character(timestamp_cst),1,38)
 
 ui <- fluidPage(
   tags$style(type="text/css", "body {background-color:  #000033}"),
-  tags$style(".big-button { font-size: 24px; padding: 7px 14px; }"),
+  tags$style(".big-button { font-size: 14px; padding: 4px 7px; }"),
   tags$a(href = "https://www.swpc.noaa.gov/products/27-day-outlook-107-cm-radio-flux-and-geomagnetic-indices", target = "_blank",
          tags$button(class = "big-button","27 day Aurora forecast")),
   tags$a(href = "https://www.windy.com/-Clouds-clouds?clouds,44.996,-97.097,5,m:eYvadFK", target = "_blank",
@@ -58,8 +58,10 @@ ui <- fluidPage(
   div(id = "my-iframe", style = "height: 70px;"),
   sidebarLayout(
     sidebarPanel(
-      selectInput("longitude", "Longitude:", choices = unique(forecast_df$longitude)),
-      selectInput("latitude", "Latitude:", choices = unique(forecast_df$latitude))
+      sliderInput("longitude", "Longitude:", min = min(forecast_df$longitude), 
+                  max = max(forecast_df$longitude), value = -90.5500),
+      sliderInput("latitude", "Latitude:", min = min(forecast_df$latitude), 
+                  max = max(forecast_df$latitude), value = 47.9167)
     ),
     mainPanel(
       tabsetPanel(
