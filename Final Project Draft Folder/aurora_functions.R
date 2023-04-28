@@ -38,31 +38,40 @@ colnames(df_kp1) <- c("time", k_split[1],'tag',k_split[2],'tag',k_split[3],'tag'
 keep_cols <- which(!grepl("tag", colnames(df_kp1)))
 df_kp1<-df_kp1[,keep_cols]
 df_kp1<-as.data.frame(df_kp1)
+kp_data_long <- reshape2::melt(df_kp1, id.vars = "time", variable.name = "Date", value.name = "kp")
+# Create a new variable that combines Date and time
+kp_data_long$datetime <- as.POSIXct(paste(kp_data_long$Date, kp_data_long$time), format="%b%d %H-%MUT")
+
+# Remove the original Date and time variables
+kp_data_long$Date <- NULL
+kp_data_long$time <- NULL
+
 
 # convert the times to CST timezone
-utc_to_cst <- function(hour_range) {
-  # split the hour range into start and end hours
-  start_hour <- as.integer(substring(hour_range, 1, 2))
-  end_hour <- as.integer(substring(hour_range, 4, 5))
+# split the datetime into date and time components in CST timezone
+# convert the datetime to CST timezone and format as month:date:hour:minute
+utc_to_cst <- function(datetime) {
+  # convert the datetime to POSIXct format in UTC timezone
+  datetime_utc <- as.POSIXct(datetime, format="%b%d %H-%MUT", tz = "UTC")
   
-  # convert the start and end hours to POSIXct format in UTC timezone
-  start_time <- as.POSIXct(paste(Sys.Date(), sprintf("%02d:00:00", start_hour)), tz = "UTC")
-  end_time <- as.POSIXct(paste(Sys.Date(), sprintf("%02d:00:00", end_hour)), tz = "UTC")
+  # convert the datetime to CST timezone
+  datetime_cst <- with_tz(datetime_utc, "America/Chicago")
   
-  # convert the start and end times to CST timezone
-  start_time_cst <- with_tz(start_time, "America/Chicago")
-  end_time_cst <- with_tz(end_time, "America/Chicago")
+  # format the datetime as month:date:hour:minute
+  datetime_cst_formatted <- format(datetime_cst, "%b:%d:%H:%M")
   
-  # combine the start and end times into a character string
-  time_range_cst <- paste(format(start_time_cst, "%H:%M"), format(end_time_cst, "%H:%M"), sep = "-")
-  
-  return(time_range_cst)
+  return(datetime_cst_formatted)
 }
 
-# apply the utc_to_cst function to the time column
-df_kp1$time <- sapply(df_kp1$time, utc_to_cst)
+kp_data_long$datetime <- sapply(kp_data_long$datetime, utc_to_cst)
 
-kp_data_long <- reshape2::melt(df_kp1, id.vars = "time", variable.name = "Date", value.name = "kp")
+kp_data_long <- kp_data_long %>%
+  separate(datetime, into = c("col1", "col2", "col3", "col4"), sep = ":") %>%
+  unite(Date, col1, col2, sep = ":") %>%
+  unite(time, col3, col4, sep = ":") %>%
+  select(Date, time, kp)
+
+
 
 plot_kp <- 
   # Create a bar plot for each day using facet_wrap
@@ -89,6 +98,8 @@ json_data <- fromJSON(json_url)
 # Extract forecast data as data frame and rename columns
 forecast_df <- as.data.frame(json_data$coordinates)
 colnames(forecast_df) <- c("longitude", "latitude", "forecast")
+
+forecast_df$longitude <- (forecast_df$longitude + 180) %% 360 - 180
 
 timestamp_utc <-c(json_data$`Observation Time`,json_data$`Forecast Time`) 
 timestamp_cst <- with_tz(ymd_hms(timestamp_utc, tz = "UTC"), "America/Chicago")
