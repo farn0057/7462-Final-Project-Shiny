@@ -70,15 +70,15 @@ plot_kp <-
     geom_col() +
     facet_wrap(~ Date, ncol = 3) +
     scale_fill_manual(values = c("#FF6666", "#66CCFF", "#99CC33")) + # Set custom fill colors
-    ylab("") +
-    xlab("kp Value") +
+    ylab("Kp Value") +
+    xlab("") +
     coord_flip()+
     ggtitle("kp Value for Different Time (CST) in the latest three Days")
 
 #Radio Blackout Forecast for the latest three days
-rb<-forecast_text[45:49]
+rb<-forecast_text[46:49]
 #Solar Radiation Storm Forecast for the latest three days
-srs<-forecast_text[32:35]
+srs<-forecast_text[33:36]
 
 #30 minutes forecast
 
